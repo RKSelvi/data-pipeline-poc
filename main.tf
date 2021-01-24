@@ -146,6 +146,7 @@ resource "azurerm_key_vault_secret" "admin_password" {
   }
 }
 
+// Create MS SQL Server
 resource "azurerm_mssql_server" "pocmssqlserver" {
   name                         = "datapocmssqlserver"
   resource_group_name          = azurerm_resource_group.rgroup.name
@@ -160,6 +161,7 @@ resource "azurerm_mssql_server" "pocmssqlserver" {
   }
 }
 
+// Create Auditing policy
 resource "azurerm_mssql_server_extended_auditing_policy" "pocsqlserveraudpolicy" {
   server_id                               = azurerm_mssql_server.pocmssqlserver.id
   storage_endpoint                        = azurerm_storage_account.datalake.primary_blob_endpoint
