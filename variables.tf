@@ -59,30 +59,6 @@ variable "keyvault_sku" {
   type        = string
   description = "Key Vault: SKU.  Valid values: standard and premium"
 }
-variable "enabled_for_deployment" {
-  type        = bool
-  description = "Key Vault: Enabled for deployment setting. Setting: True/False"
-}
-variable "enabled_for_disk_encryption" {
-  type        = bool
-  description = "Key Vault: Enabled for Enabled for Disk Encryption setting. Setting: True/False"
-}
-variable "enabled_for_template_deployment" {
-  type        = bool
-  description = "Key Vault: Enabled for Enabled for Template Deployment setting. Setting: True/False"
-}
-variable "enable_rbac_authorization" {
-  type        = bool
-  description = "Key Vault: Enabled/Disable for RBAC Authorization. Setting: True/False"
-}
-variable "soft_delete_retention_days" {
-  type        = number
-  description = "Key Vault: Specifies retention (in days) for soft delete setting. Days: 7, 14, 21, 30. etc."
-}
-variable "purge_protection_enabled" {
-  type        = bool
-  description = "Key Vault: Specifies if KeyVault purge protection should be enabled/disabled. Setting: True/False"
-}
 
 variable "secret_name_admin_user" {
   type        = string
