@@ -146,24 +146,26 @@ resource "azurerm_key_vault_secret" "admin_password" {
   }
 }
 
-resource "azurerm_sql_server" "pocsqlserver" {
-  name                         = "datapocsqlserver"
+resource "azurerm_mssql_server" "pocmssqlserver" {
+  name                         = "datapocmssqlserver"
   resource_group_name          = azurerm_resource_group.rgroup.name
   location                     = azurerm_resource_group.rgroup.location
   version                      = "12.0"
   administrator_login          = var.secret_value_admin_user
   administrator_login_password = var.secret_value_admin_password
-
-  extended_auditing_policy {
-    storage_endpoint                        = azurerm_storage_account.datalake.primary_blob_endpoint
-    storage_account_access_key              = azurerm_storage_account.datalake.primary_access_key
-    storage_account_access_key_is_secondary = true
-    retention_in_days                       = 6
-  }
+  minimum_tls_version          = "1.2"
 
   tags = {
     environment = "poc"
   }
+}
+
+resource "azurerm_mssql_server_extended_auditing_policy" "pocsqlserveraudpolicy" {
+  server_id                               = azurerm_mssql_server.pocmssqlserver.id
+  storage_endpoint                        = azurerm_storage_account.datalake.primary_blob_endpoint
+    storage_account_access_key              = azurerm_storage_account.datalake.primary_access_key
+    storage_account_access_key_is_secondary = true
+    retention_in_days                       = 6
 }
 
 // Create Diagnostic Monitoring - Data Lake
