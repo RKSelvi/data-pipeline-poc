@@ -146,50 +146,6 @@ resource "azurerm_key_vault_secret" "admin_password" {
   }
 }
 
-// Create Key Vault Secret (Data Lake Master ID)
-resource "azurerm_key_vault_secret" "data_lake_master_id" {
-  depends_on   = [azurerm_key_vault.keyvault]
-  name         = var.secret_name_data_lake_master_id
-  value        = var.secret_value_data_lake_master_id
-  key_vault_id = azurerm_key_vault.keyvault.id
-  lifecycle {
-    ignore_changes = [
-      name,
-      value
-    ]
-  }
-}
-
-// Create Key Vault Secret (Data Lake Master Key)
-resource "azurerm_key_vault_secret" "data_lake_master_key" {
-  depends_on   = [azurerm_key_vault.keyvault]
-  name         = var.secret_name_data_lake_master_key
-  value        = var.secret_value_data_lake_master_key
-  key_vault_id = azurerm_key_vault.keyvault.id
-  lifecycle {
-    ignore_changes = [
-      name,
-      value
-    ]
-  }
-}
-
-//CreateKey Vault Secret (Data Lake Access Key)
-resource "azurerm_key_vault_secret" "data_lake_access_key" {
-  depends_on   = [azurerm_key_vault.keyvault]
-  name         = var.secret_name_data_lake_access_key
-  value        = azurerm_storage_account.datalake.primary_access_key
-  key_vault_id = azurerm_key_vault.keyvault.id
-  lifecycle {
-    ignore_changes = [
-      name,
-      value
-    ]
-  }
-}
-
-
-
 // Create Diagnostic Monitoring - Data Lake
 resource "azurerm_monitor_diagnostic_setting" "diagmonitoringdatalake" {
   name                       = var.data_lake_diagnostic_monitoring_name
@@ -204,7 +160,7 @@ resource "azurerm_monitor_diagnostic_setting" "diagmonitoringdatalake" {
   lifecycle {
     ignore_changes = [
       name,
-      resourceid
+      target_resource_id
     ]
   }
 }
@@ -223,7 +179,7 @@ resource "azurerm_monitor_diagnostic_setting" "diagmonitoringkeyvault" {
   lifecycle {
     ignore_changes = [
       name,
-      resourceid
+      target_resource_id
     ]
   }
 }

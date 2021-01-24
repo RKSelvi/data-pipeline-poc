@@ -1,7 +1,3 @@
-variable "subscription_id" {
-  description = "The Azure subscription ID. Passed from ci-gh-terraform.yml"
-}
-
 variable "tenant_id" {
   description = "The Azure tenant ID for the service principal. Passed from ci-gh-terraform.yml"
 }
