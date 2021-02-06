@@ -170,7 +170,7 @@ resource "azurerm_synapse_workspace" "pocsynapsewksp" {
   sql_administrator_login_password     = var.secret_value_admin_password
 }
 
-resource "azurerm_synapse_sql_pool" "pocsynapsesqlpool" {
+resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
   name                 = "datapocsynpsqlpl"
   synapse_workspace_id = azurerm_synapse_workspace.pocsynapsewksp.id
   sku_name             = "DW100c"
