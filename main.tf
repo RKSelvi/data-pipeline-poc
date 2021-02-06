@@ -171,7 +171,7 @@ resource "azurerm_synapse_workspace" "pocsynapsewksp" {
 }
 
 resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
-  name                 = "datapocsynpsqlpl"
+  name                 = "synapsepl"
   synapse_workspace_id = azurerm_synapse_workspace.pocsynapsewksp.id
   sku_name             = "DW100c"
   create_mode          = "Default"
