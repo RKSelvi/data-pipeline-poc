@@ -146,20 +146,20 @@ resource "azurerm_key_vault_secret" "admin_password" {
   }
 }
 
-// Create MS SQL Server
-resource "azurerm_mssql_server" "pocmssqlserver" {
-  name                         = "datapocmssqlserver"
-  resource_group_name          = azurerm_resource_group.rgroup.name
-  location                     = azurerm_resource_group.rgroup.location
-  version                      = "12.0"
-  administrator_login          = var.secret_value_admin_user
-  administrator_login_password = var.secret_value_admin_password
-  minimum_tls_version          = "1.2"
+# // Create MS SQL Server
+# resource "azurerm_mssql_server" "pocmssqlserver" {
+#   name                         = "datapocmssqlserver"
+#   resource_group_name          = azurerm_resource_group.rgroup.name
+#   location                     = azurerm_resource_group.rgroup.location
+#   version                      = "12.0"
+#   administrator_login          = var.secret_value_admin_user
+#   administrator_login_password = var.secret_value_admin_password
+#   minimum_tls_version          = "1.2"
 
-  tags = {
-    environment = "poc"
-  }
-}
+#   tags = {
+#     environment = "poc"
+#   }
+# }
 
 resource "azurerm_synapse_workspace" "pocsynapsewksp" {
   name                                 = "datapocsynapsewksp"
@@ -178,14 +178,14 @@ resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
   collation            = "SQL_LATIN1_GENERAL_CP1_CS_AS"
 }
 
-// Create Auditing policy
-resource "azurerm_mssql_server_extended_auditing_policy" "pocsqlserveraudpolicy" {
-  server_id                               = azurerm_mssql_server.pocmssqlserver.id
-  storage_endpoint                        = azurerm_storage_account.datalake.primary_blob_endpoint
-    storage_account_access_key              = azurerm_storage_account.datalake.primary_access_key
-    storage_account_access_key_is_secondary = true
-    retention_in_days                       = 6
-}
+# // Create Auditing policy
+# resource "azurerm_mssql_server_extended_auditing_policy" "pocsqlserveraudpolicy" {
+#   server_id                               = azurerm_mssql_server.pocmssqlserver.id
+#   storage_endpoint                        = azurerm_storage_account.datalake.primary_blob_endpoint
+#     storage_account_access_key              = azurerm_storage_account.datalake.primary_access_key
+#     storage_account_access_key_is_secondary = true
+#     retention_in_days                       = 6
+# }
 
 // Create Diagnostic Monitoring - Data Lake
 resource "azurerm_monitor_diagnostic_setting" "diagmonitoringdatalake" {
