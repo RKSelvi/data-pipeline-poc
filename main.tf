@@ -161,6 +161,23 @@ resource "azurerm_mssql_server" "pocmssqlserver" {
   }
 }
 
+resource "azurerm_synapse_workspace" "pocsynapsewksp" {
+  name                                 = "datapocsynapsewksp"
+  resource_group_name                  = azurerm_resource_group.rgroup.name
+  location                             = azurerm_resource_group.rgroup.location
+  storage_data_lake_gen2_filesystem_id = azurerm_storage_data_lake_gen2_filesystem.datafiles.id
+  sql_administrator_login              = var.secret_value_admin_user
+  sql_administrator_login_password     = var.secret_value_admin_password
+}
+
+resource "azurerm_synapse_sql_pool" "pocsynapsesqlpool" {
+  name                 = "datapocsynapsesqlpool"
+  synapse_workspace_id = azurerm_synapse_workspace.example.id
+  sku_name             = "DW100c"
+  create_mode          = "Default"
+  collation            = "SQL_LATIN1_GENERAL_CP1_CS_AS"
+}
+
 // Create Auditing policy
 resource "azurerm_mssql_server_extended_auditing_policy" "pocsqlserveraudpolicy" {
   server_id                               = azurerm_mssql_server.pocmssqlserver.id
