@@ -118,8 +118,7 @@ jobs:
         DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
         DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
         DATA_LAKE_NAME: ${{ env.data_lake_name }}
-    
-     # Azurelogout
+        
     - name: logout
       run: |
         az logout
