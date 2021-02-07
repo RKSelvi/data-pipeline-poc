@@ -70,7 +70,7 @@ jobs:
   
   deploydacpac:
     name: 'DacpacDeployment'
-    needs: [terraform]
+    # needs: [terraform]
     runs-on: windows-latest
 
     steps:
