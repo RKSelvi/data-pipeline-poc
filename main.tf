@@ -158,7 +158,7 @@ resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
 }
 
 resource "azurerm_synapse_firewall_rule" "example" {
-  name                 = "AllowAzureService"
+  name                 = "AllowAllWindowsAzureIps"
   synapse_workspace_id = azurerm_synapse_workspace.pocsynapsewksp.id
   start_ip_address     = "0.0.0.0"
   end_ip_address       = "0.0.0.0"
