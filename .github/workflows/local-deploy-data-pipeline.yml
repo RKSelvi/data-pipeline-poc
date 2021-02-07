@@ -2,7 +2,6 @@ name: data-pipeline-poc
 
 env:
   LOCATION: eastus2
-
   resource_group_name: data-pipeline-rg
   log_analytics_workspace_name: data-pipeline-log
   data_lake_name: datapipelinedl
