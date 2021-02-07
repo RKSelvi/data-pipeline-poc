@@ -1,0 +1,13 @@
+C:\repos\data-pipeline-poc\DataPipelinePoc\bin\Debug\DataPipelinePoc.dacpac
+C:\repos\data-pipeline-poc\DataPipelinePoc\obj\Debug\DataPipelinePoc.dll
+C:\repos\data-pipeline-poc\DataPipelinePoc\obj\Debug\DataPipelinePoc.pdb
+C:\repos\data-pipeline-poc\DataPipelinePoc\bin\Debug\DataPipelinePoc.dll
+C:\repos\data-pipeline-poc\DataPipelinePoc\bin\Debug\DataPipelinePoc.pdb
+C:\repos\data-pipeline-poc\DataPipelinePoc\obj\Debug\Model.xml
+C:\repos\data-pipeline-poc\DataPipelinePoc\obj\Debug\refactor.xml
+C:\repos\data-pipeline-poc\DataPipelinePoc\obj\Debug\postdeploy.sql
+C:\repos\data-pipeline-poc\DataPipelinePoc\obj\Debug\predeploy.sql
+C:\repos\data-pipeline-poc\DataPipelinePoc\DataPipelinePoc\Publish\DataPipelinePoc.dacpac\DataPipelinePoc.dacpac
+C:\repos\data-pipeline-poc\DataPipelinePoc\DataPipelinePoc\Publish\DataPipelinePoc.dacpac\DataPipelinePoc.dll
+C:\repos\data-pipeline-poc\DataPipelinePoc\DataPipelinePoc\Publish\DataPipelinePoc.dacpac\DataPipelinePoc.pdb
+C:\repos\data-pipeline-poc\DataPipelinePoc\obj\Debug\DataPipelinePoc.sqlprojAssemblyReference.cache

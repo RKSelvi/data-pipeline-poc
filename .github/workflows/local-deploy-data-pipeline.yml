@@ -1,0 +1,124 @@
+name: data-pipeline-poc
+
+env:
+  LOCATION: eastus2
+  resource_group_name: data-pipeline-rg
+  log_analytics_workspace_name: data-pipeline-log
+  data_lake_name: datapipelinedl
+  data_lake_file_system_name: datapipelinefs
+  data_lake_account_tier: standard
+  data_lake_account_kind: StorageV2
+  data_lake_account_replication_type: GRS
+  data_lake_allow_blob_public_access: false
+  keyvault_name: datapipelinekv
+  keyvault_sku: standard
+  secret_name_admin_user: sql-db-admin-user-name
+  secret_name_admin_password: sql-db-admin-user-password
+  synapse_server_name: datapocsynapsewksp
+  synapse_db_name: synapsepl
+  key_vault_diagnostic_monitoring_name: dmon-kvt-datapipeline
+  data_lake_diagnostic_monitoring_name: dmon-dlk-datapipeline
+  dacpac_path: ./DataPipelinePoc/Publish/DataPipelinePoc.dacpac
+  dacpac_publish_path: .\publish
+
+on:
+  push:
+   branches: [ data-pipeline-for-demo ]
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Terraform Init
+      run: |
+        terraform init
+        terraform plan -no-color
+        terraform apply -auto-approve
+      env:
+        ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        ARM_ACCESS_KEY: ${{ secrets.TFSTATE_STORAGE_ACCT_KEY }}        
+        TF_VAR_location: ${{ env.LOCATION }}
+        TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+        TF_VAR_resource_group_name: ${{ env.resource_group_name }}
+        TF_VAR_log_analytics_workspace_name: ${{ env.log_analytics_workspace_name }}
+        TF_VAR_data_lake_name: ${{ env.data_lake_name }}
+        TF_VAR_data_lake_file_system_name: ${{ env.data_lake_file_system_name }}
+        TF_VAR_data_lake_account_tier: ${{ env.data_lake_account_tier }}
+        TF_VAR_data_lake_account_replication_type: ${{ env.data_lake_account_replication_type }}
+        TF_VAR_data_lake_account_kind: ${{ env.data_lake_account_kind }}
+        TF_VAR_data_lake_allow_blob_public_access: ${{ env.data_lake_allow_blob_public_access }}
+        TF_VAR_keyvault_name: ${{ env.keyvault_name }}
+        TF_VAR_keyvault_sku: ${{ env.keyvault_sku }}        
+        TF_VAR_secret_name_admin_user: ${{ env.secret_name_admin_user }}
+        TF_VAR_secret_value_admin_user: ${{ secrets.SQL_ADMIN_USER_NAME }}
+        TF_VAR_secret_name_admin_password: ${{ env.secret_name_admin_password }}
+        TF_VAR_secret_value_admin_password: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}      
+        TF_VAR_key_vault_diagnostic_monitoring_name: ${{ env.key_vault_diagnostic_monitoring_name }}
+        TF_VAR_data_lake_diagnostic_monitoring_name: ${{ env.data_lake_diagnostic_monitoring_name }}
+  
+  deploydacpac:
+    name: 'DacpacDeployment'
+    needs: [terraform]
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Deploy DACPAC
+      id: gh_ws
+      shell: pwsh
+      run: |
+        cd ${{ github.workspace }}
+        $env:Path = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin"
+        MSBuild.exe 'DataPipelinePoc/DataPipelinePoc.sqlproj' /p:OutputPath=$env:DACPAC_Publish_Path      
+      env:
+        DACPAC_Publish_Path: ${{ env.dacpac_publish_path }}
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get Storage Access Key
+      id: get_access_key
+      shell: pwsh
+      env:
+        DATA_LAKE_RG_NAME: ${{ env.resource_group_name }}
+        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+      run: |
+        $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.keyvault_name }} --query value --output tsv)
+        echo "::add-mask::$dataLakeStorageAccountKey"
+        echo "::set-output name=STORAGE_ACCESS_KEY::$dataLakeStorageAccountKey"
+
+    - uses: azure/sql-action@v1
+      with:
+        server-name: "${{ env.DB_Server_Name }}.sql.azuresynapse.net"
+        connection-string: "Server=tcp:${{ env.DB_Server_Name }}.sql.azuresynapse.net,1433;Initial Catalog=${{ env.DB_Name }};Persist Security Info=False;User ID=${{ env.SQL_ADMIN_USER_NAME }};Password=${{ env.SQL_ADMIN_USER_PSWD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        dacpac-package: ${{ env.DACPAC_Path }}
+        arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://data-files@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
+      env:
+        DB_Server_Name: ${{ env.synapse_server_name }}
+        DB_Name: ${{ env.synapse_db_name }}
+        DACPAC_Path: ${{ env.dacpac_path }}
+        SQL_ADMIN_USER_NAME: ${{ secrets.SQL_ADMIN_USER_NAME }}
+        SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}
+        DATA_LAKE_ACCESS_KEY: ${{ steps.get_access_key.outputs.STORAGE_ACCESS_KEY }}
+        DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
+        DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
+        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+        
+    - name: logout
+      run: |
+        az logout

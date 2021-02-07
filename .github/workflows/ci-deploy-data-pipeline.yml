@@ -21,8 +21,11 @@ env:
   dacpac_publish_path: .\publish
 
 on:
-  push:
-   branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+    - 'README.md'
+    - 'LICENSE'
 
 jobs:
   terraform:
