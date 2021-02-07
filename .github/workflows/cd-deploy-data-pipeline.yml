@@ -1,23 +1,25 @@
 name: data-pipeline-poc
 
 env:
+# Env variables for 'Staging/Prod'
   LOCATION: eastus2
-
-  resource_group_name: dev-data-pipeline-rg
-  log_analytics_workspace_name: dev-data-pipeline-log
-  data_lake_name: devdatapipelinedl
-  data_lake_file_system_name: devdatapipelinefs
+  resource_group_name: data-pipeline-rg
+  log_analytics_workspace_name: data-pipeline-log
+  data_lake_name: datapipelinedl
+  data_lake_file_system_name: datapipelinefs
   data_lake_account_tier: standard
   data_lake_account_kind: StorageV2
   data_lake_account_replication_type: GRS
   data_lake_allow_blob_public_access: false
-  keyvault_name: devdatapipelinekv
+  keyvault_name: datapipelinekv
   keyvault_sku: standard
-  secret_name_admin_user: dev-sql-db-admin-user-name
-  secret_name_admin_password: dev-sql-db-admin-user-password
-  key_vault_diagnostic_monitoring_name: dev-dmon-kvt-datapipeline
-  data_lake_diagnostic_monitoring_name: dev-dmon-dlk-datapipeline
-  dacpac_path: ./SQLScripts/DataWarehouse/Publish/DataWarehouse.dacpac
+  secret_name_admin_user: sql-db-admin-user-name
+  secret_name_admin_password: sql-db-admin-user-password
+  synapse_server_name: datapocsynapsewksp
+  synapse_db_name: synapsepl
+  key_vault_diagnostic_monitoring_name: dmon-kvt-datapipeline
+  data_lake_diagnostic_monitoring_name: dmon-dlk-datapipeline
+  dacpac_path: ./DataPipelinePoc/Publish/DataPipelinePoc.dacpac
   dacpac_publish_path: .\publish
 
 on:
@@ -66,3 +68,58 @@ jobs:
         TF_VAR_secret_value_admin_password: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}      
         TF_VAR_key_vault_diagnostic_monitoring_name: ${{ env.key_vault_diagnostic_monitoring_name }}
         TF_VAR_data_lake_diagnostic_monitoring_name: ${{ env.data_lake_diagnostic_monitoring_name }}
+  
+  deploydacpac:
+    name: 'DacpacDeployment'
+    needs: [terraform]
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Deploy DACPAC
+      id: gh_ws
+      shell: pwsh
+      run: |
+        cd ${{ github.workspace }}
+        $env:Path = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin"
+        MSBuild.exe 'DataPipelinePoc/DataPipelinePoc.sqlproj' /p:OutputPath=$env:DACPAC_Publish_Path      
+      env:
+        DACPAC_Publish_Path: ${{ env.dacpac_publish_path }}
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get Storage Access Key
+      id: get_access_key
+      shell: pwsh
+      env:
+        DATA_LAKE_RG_NAME: ${{ env.resource_group_name }}
+        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+      run: |
+        $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.keyvault_name }} --query value --output tsv)
+        echo "::add-mask::$dataLakeStorageAccountKey"
+        echo "::set-output name=STORAGE_ACCESS_KEY::$dataLakeStorageAccountKey"
+
+    - uses: azure/sql-action@v1
+      with:
+        server-name: "${{ env.DB_Server_Name }}.sql.azuresynapse.net"
+        connection-string: "Server=tcp:${{ env.DB_Server_Name }}.sql.azuresynapse.net,1433;Initial Catalog=${{ env.DB_Name }};Persist Security Info=False;User ID=${{ env.SQL_ADMIN_USER_NAME }};Password=${{ env.SQL_ADMIN_USER_PSWD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        dacpac-package: ${{ env.DACPAC_Path }}
+        arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://data-files@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
+      env:
+        DB_Server_Name: ${{ env.synapse_server_name }}
+        DB_Name: ${{ env.synapse_db_name }}
+        DACPAC_Path: ${{ env.dacpac_path }}
+        SQL_ADMIN_USER_NAME: ${{ secrets.SQL_ADMIN_USER_NAME }}
+        SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}
+        DATA_LAKE_ACCESS_KEY: ${{ steps.get_access_key.outputs.STORAGE_ACCESS_KEY }}
+        DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
+        DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
+        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+        
+    - name: logout
+      run: |
+        az logout
