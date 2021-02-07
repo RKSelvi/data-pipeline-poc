@@ -124,12 +124,6 @@ resource "azurerm_key_vault_secret" "admin_username" {
   name         = var.secret_name_admin_user
   value        = var.secret_value_admin_user
   key_vault_id = azurerm_key_vault.keyvault.id
-  lifecycle {
-    ignore_changes = [
-      name,
-      value
-    ]
-  }
 }
 
 // Create Key Vault Secret (SQL Admin Password)
@@ -138,12 +132,6 @@ resource "azurerm_key_vault_secret" "admin_password" {
   name         = var.secret_name_admin_password
   value        = var.secret_value_admin_password
   key_vault_id = azurerm_key_vault.keyvault.id
-  lifecycle {
-    ignore_changes = [
-      name,
-      value
-    ]
-  }
 }
 
 //CreateKey Vault Secret (Data Lake Access Key)
@@ -152,12 +140,6 @@ resource "azurerm_key_vault_secret" "data_lake_access_key" {
   name         = "data-lake-access-key"
   value        = azurerm_storage_account.datalake.primary_access_key
   key_vault_id = azurerm_key_vault.keyvault.id
-  lifecycle {
-    ignore_changes = [
-      name,
-      value
-    ]
-  }
 }
 
 resource "azurerm_synapse_workspace" "pocsynapsewksp" {
