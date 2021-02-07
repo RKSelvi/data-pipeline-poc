@@ -1,6 +1,7 @@
 name: data-pipeline-poc
 
 env:
+# Env variables for 'local/development'
   LOCATION: eastus2
   resource_group_name: data-pipeline-rg
   log_analytics_workspace_name: data-pipeline-log
@@ -23,7 +24,7 @@ env:
 
 on:
   push:
-   branches: [ data-pipeline-for-demo ]
+   branches: [ local-branch-name ]
 
 jobs:
   terraform:
