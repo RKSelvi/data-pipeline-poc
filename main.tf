@@ -7,7 +7,7 @@ terraform {
     resource_group_name  = "tf_backend_rg"
     storage_account_name = "tfbkndsapoc"
     container_name       = "tfstcont"
-    key                  = "data-pipe-poc.tfstate"
+    key                  = "data-pipe.tfstate"
   }
 }
 
@@ -57,12 +57,6 @@ resource "azurerm_storage_data_lake_gen2_path" "networkanalytics" {
   filesystem_name    = azurerm_storage_data_lake_gen2_filesystem.datafiles.name
   storage_account_id = azurerm_storage_account.datalake.id
   resource           = "directory"
-  lifecycle {
-    ignore_changes = [
-      path,
-      filesystem_name
-    ]
-  }
 }
 
 // Create NetworkMonitoring Data Lake Directory
@@ -72,12 +66,15 @@ resource "azurerm_storage_data_lake_gen2_path" "networkmonitoring" {
   filesystem_name    = azurerm_storage_data_lake_gen2_filesystem.datafiles.name
   storage_account_id = azurerm_storage_account.datalake.id
   resource           = "directory"
-  lifecycle {
-    ignore_changes = [
-      path,
-      filesystem_name
-    ]
-  }
+}
+
+// Create AzureMetrics Data Lake Directory
+resource "azurerm_storage_data_lake_gen2_path" "azuremetrics" {
+  depends_on         = [azurerm_storage_data_lake_gen2_filesystem.datafiles]
+  path               = "AzureMetrics"
+  filesystem_name    = azurerm_storage_data_lake_gen2_filesystem.datafiles.name
+  storage_account_id = azurerm_storage_account.datalake.id
+  resource           = "directory"
 }
 
 // Create Key Vault
@@ -158,6 +155,13 @@ resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
   sku_name             = "DW100c"
   create_mode          = "Default"
   collation            = "SQL_LATIN1_GENERAL_CP1_CI_AS"
+}
+
+resource "azurerm_synapse_firewall_rule" "example" {
+  name                 = "AllowAzureService"
+  synapse_workspace_id = azurerm_synapse_workspace.pocsynapsewksp.id
+  start_ip_address     = "0.0.0.0"
+  end_ip_address       = "0.0.0.0"
 }
 
 // Create Diagnostic Monitoring - Data Lake
