@@ -114,7 +114,7 @@ jobs:
         DB_Name: ${{ env.synapse_db_name }}
         DACPAC_Path: ${{ env.dacpac_path }}
         SQL_ADMIN_USER_NAME: ${{ secrets.SQL_ADMIN_USER_NAME }}
-        SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PSWD }}
+        SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}
         DATA_LAKE_ACCESS_KEY: ${{ steps.get_access_key.outputs.STORAGE_ACCESS_KEY }}
         DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
         DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
