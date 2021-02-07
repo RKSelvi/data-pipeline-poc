@@ -167,6 +167,7 @@ resource "azurerm_synapse_workspace" "pocsynapsewksp" {
   storage_data_lake_gen2_filesystem_id = azurerm_storage_data_lake_gen2_filesystem.datafiles.id
   sql_administrator_login              = var.secret_value_admin_user
   sql_administrator_login_password     = var.secret_value_admin_password
+  sql_identity_control_enabled         = true
 }
 
 resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
