@@ -157,7 +157,7 @@ resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
   synapse_workspace_id = azurerm_synapse_workspace.pocsynapsewksp.id
   sku_name             = "DW100c"
   create_mode          = "Default"
-  collation            = "SQL_LATIN1_GENERAL_CP1_CS_AS"
+  collation            = "SQL_LATIN1_GENERAL_CP1_CI_AS"
 }
 
 // Create Diagnostic Monitoring - Data Lake

@@ -72,4 +72,26 @@
     <Build Include="database\datapoc\External Resources\StorageParquetLogFiles.sql" />
     <Build Include="database\datapoc\Credentials\DataLakeScopedCredential.sql" />
   </ItemGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="DataLakeAccessId">
+      <DefaultValue>
+      </DefaultValue>
+      <Value>$(SqlCmdVar__2)</Value>
+    </SqlCmdVariable>
+    <SqlCmdVariable Include="DataLakeAccessKey">
+      <DefaultValue>
+      </DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
+    <SqlCmdVariable Include="DataLakeEncryptionMasterKey">
+      <DefaultValue>
+      </DefaultValue>
+      <Value>$(SqlCmdVar__3)</Value>
+    </SqlCmdVariable>
+    <SqlCmdVariable Include="ParquetLogFileLocation">
+      <DefaultValue>
+      </DefaultValue>
+      <Value>$(SqlCmdVar__4)</Value>
+    </SqlCmdVariable>
+  </ItemGroup>
 </Project>

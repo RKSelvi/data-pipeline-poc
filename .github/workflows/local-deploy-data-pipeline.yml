@@ -107,7 +107,7 @@ jobs:
         server-name: "${{ env.DB_Server_Name }}.sql.azuresynapse.net"
         connection-string: "Server=tcp:${{ env.DB_Server_Name }}.sql.azuresynapse.net,1433;Initial Catalog=${{ env.DB_Name }};Persist Security Info=False;User ID=${{ env.SQL_ADMIN_USER_NAME }};Password=${{ env.SQL_ADMIN_USER_PSWD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
         dacpac-package: ${{ env.DACPAC_Path }}
-        arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://parquetlogfiles@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\" /Variables:TextFileLocation=\"wasbs://data-files@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
+        arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://parquetlogfiles@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
       env:
         DB_Server_Name: ${{ env.synapse_server_name }}
         DB_Name: ${{ env.synapse_db_name }}
