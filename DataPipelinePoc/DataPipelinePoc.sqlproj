@@ -56,5 +56,20 @@
   <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
   <ItemGroup>
     <Folder Include="Properties" />
+    <Folder Include="database" />
+    <Folder Include="database\datapoc" />
+    <Folder Include="database\datapoc\Credentials" />
+    <Folder Include="database\datapoc\dbo" />
+    <Folder Include="database\datapoc\dbo\sprocs" />
+    <Folder Include="database\datapoc\dbo\tables" />
+    <Folder Include="database\datapoc\dbo\tables\External Tables" />
+    <Folder Include="database\datapoc\External File Formats" />
+    <Folder Include="database\datapoc\External Resources" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="database\datapoc\dbo\tables\External Tables\azureMetrics.sql" />
+    <Build Include="database\datapoc\External File Formats\AS_PARQUET.sql" />
+    <Build Include="database\datapoc\External Resources\StorageParquetLogFiles.sql" />
+    <Build Include="database\datapoc\Credentials\DataLakeScopedCredential.sql" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 terraform {
   required_providers {
-    azurerm = "~> 2.44.0"
+    azurerm = "~> 2.46.1"
   }
 
   backend "azurerm" {
@@ -146,28 +146,27 @@ resource "azurerm_key_vault_secret" "admin_password" {
   }
 }
 
-# // Create MS SQL Server
-# resource "azurerm_mssql_server" "pocmssqlserver" {
-#   name                         = "datapocmssqlserver"
-#   resource_group_name          = azurerm_resource_group.rgroup.name
-#   location                     = azurerm_resource_group.rgroup.location
-#   version                      = "12.0"
-#   administrator_login          = var.secret_value_admin_user
-#   administrator_login_password = var.secret_value_admin_password
-#   minimum_tls_version          = "1.2"
-
-#   tags = {
-#     environment = "poc"
-#   }
-# }
+//CreateKey Vault Secret (Data Lake Access Key)
+resource "azurerm_key_vault_secret" "data_lake_access_key" {
+  depends_on   = [azurerm_key_vault.keyvault]
+  name         = "data-lake-access-key"
+  value        = azurerm_storage_account.datalake.primary_access_key
+  key_vault_id = azurerm_key_vault.keyvault.id
+  lifecycle {
+    ignore_changes = [
+      name,
+      value
+    ]
+  }
+}
 
 resource "azurerm_synapse_workspace" "pocsynapsewksp" {
   name                                 = "datapocsynapsewksp"
   resource_group_name                  = azurerm_resource_group.rgroup.name
   location                             = azurerm_resource_group.rgroup.location
   storage_data_lake_gen2_filesystem_id = azurerm_storage_data_lake_gen2_filesystem.datafiles.id
-  sql_administrator_login              = "datapipesqladmin"
-  sql_administrator_login_password     = "Poc@Synp#32"
+  sql_administrator_login              = var.secret_value_admin_user
+  sql_administrator_login_password     = var.secret_value_admin_password
 }
 
 resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
@@ -177,15 +176,6 @@ resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
   create_mode          = "Default"
   collation            = "SQL_LATIN1_GENERAL_CP1_CS_AS"
 }
-
-# // Create Auditing policy
-# resource "azurerm_mssql_server_extended_auditing_policy" "pocsqlserveraudpolicy" {
-#   server_id                               = azurerm_mssql_server.pocmssqlserver.id
-#   storage_endpoint                        = azurerm_storage_account.datalake.primary_blob_endpoint
-#     storage_account_access_key              = azurerm_storage_account.datalake.primary_access_key
-#     storage_account_access_key_is_secondary = true
-#     retention_in_days                       = 6
-# }
 
 // Create Diagnostic Monitoring - Data Lake
 resource "azurerm_monitor_diagnostic_setting" "diagmonitoringdatalake" {
