@@ -61,6 +61,8 @@ jobs:
         TF_VAR_data_lake_account_kind: ${{ env.data_lake_account_kind }}
         TF_VAR_data_lake_allow_blob_public_access: ${{ env.data_lake_allow_blob_public_access }}
         TF_VAR_keyvault_name: ${{ env.keyvault_name }}
+        TF_VAR_synapse_server_name: ${{ env.synapse_server_name }}
+        TF_VAR_synapse_db_name: ${{ env.synapse_db_name }}
         TF_VAR_keyvault_sku: ${{ env.keyvault_sku }}        
         TF_VAR_secret_name_admin_user: ${{ env.secret_name_admin_user }}
         TF_VAR_secret_value_admin_user: ${{ secrets.SQL_ADMIN_USER_NAME }}

@@ -141,7 +141,7 @@ resource "azurerm_key_vault_secret" "data_lake_access_key" {
 }
 
 resource "azurerm_synapse_workspace" "pocsynapsewksp" {
-  name                                 = "datapocsynapsewksp"
+  name                                 = var.synapse_server_name
   resource_group_name                  = azurerm_resource_group.rgroup.name
   location                             = azurerm_resource_group.rgroup.location
   storage_data_lake_gen2_filesystem_id = azurerm_storage_data_lake_gen2_filesystem.datafiles.id
@@ -151,7 +151,7 @@ resource "azurerm_synapse_workspace" "pocsynapsewksp" {
 }
 
 resource "azurerm_synapse_sql_pool" "pocsynpsqlpl" {
-  name                 = "synapsepl"
+  name                 = var.synapse_db_name
   synapse_workspace_id = azurerm_synapse_workspace.pocsynapsewksp.id
   sku_name             = "DW100c"
   create_mode          = "Default"

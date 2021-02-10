@@ -80,7 +80,18 @@ variable "key_vault_diagnostic_monitoring_name" {
   type        = string
   description = "Diagnostic Monitoring: Keyvault"
 }
+
 variable "data_lake_diagnostic_monitoring_name" {
   type        = string
   description = "Diagnostic Monitoring: Data Lake"
+}
+
+variable "synapse_server_name" {
+  type        = string
+  description = "Synapse server name"
+}
+
+variable "synapse_db_name" {
+  type        = string
+  description = "Synapse DB Name"
 }
