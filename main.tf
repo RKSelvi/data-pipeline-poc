@@ -7,7 +7,8 @@ terraform {
     resource_group_name  = "tf_backend_rg"
     storage_account_name = "tfbkndsapoc"
     container_name       = "tfstcont"
-    key                  = "data-pipe.tfstate"
+    #key                  = "data-pipe.tfstate" # ci pipeline state file
+    key                  = "data-pipe-prod.tfstate" # cd pipeline state file
   }
 }
 
