@@ -1,6 +1,9 @@
 -- drop external table azureMetrics;
 CREATE EXTERNAL TABLE [dbo].[azureMetrics]
-( 	[name] varchar(100)
+( 	[tablename] VARCHAR(100),
+    [name]      VARCHAR(50),
+    [type]      VARCHAR(50),
+    [items]     VARCHAR2(4000)
 )
 WITH
  (
