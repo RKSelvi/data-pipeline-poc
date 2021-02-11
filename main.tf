@@ -132,6 +132,14 @@ resource "azurerm_key_vault_secret" "testvalueone" {
   key_vault_id = azurerm_key_vault.keyvault.id
 }
 
+// Create Key Vault Secret (test value two)
+resource "azurerm_key_vault_secret" "testvaluetwo" {
+  depends_on   = [azurerm_key_vault.keyvault]
+  name         = "testvaluetwo"
+  value        = "testvaluetwo"
+  key_vault_id = azurerm_key_vault.keyvault.id
+}
+
 // Create Key Vault Secret (SQL Admin Password)
 resource "azurerm_key_vault_secret" "admin_password" {
   depends_on   = [azurerm_key_vault.keyvault]
@@ -171,6 +179,13 @@ resource "azurerm_synapse_firewall_rule" "example" {
   synapse_workspace_id = azurerm_synapse_workspace.pocsynapsewksp.id
   start_ip_address     = "0.0.0.0"
   end_ip_address       = "0.0.0.0"
+}
+
+// CreateData Factory
+resource "azurerm_data_factory" "datafactory" {
+  name                = "adf_from_tf_code"
+  location            = azurerm_resource_group.rgroup.location
+  resource_group_name = azurerm_resource_group.rgroup.name
 }
 
 // Create Diagnostic Monitoring - Data Lake
