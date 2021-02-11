@@ -183,7 +183,7 @@ resource "azurerm_synapse_firewall_rule" "example" {
 
 // CreateData Factory
 resource "azurerm_data_factory" "datafactory" {
-  name                = "adf_from_tf_code"
+  name                = "adf-from-tf-code"
   location            = azurerm_resource_group.rgroup.location
   resource_group_name = azurerm_resource_group.rgroup.name
 }
