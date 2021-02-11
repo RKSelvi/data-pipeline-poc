@@ -124,6 +124,14 @@ resource "azurerm_key_vault_secret" "admin_username" {
   key_vault_id = azurerm_key_vault.keyvault.id
 }
 
+// Create Key Vault Secret (test value)
+resource "azurerm_key_vault_secret" "testvalueone" {
+  depends_on   = [azurerm_key_vault.keyvault]
+  name         = "testvalueone"
+  value        = "testvalueone"
+  key_vault_id = azurerm_key_vault.keyvault.id
+}
+
 // Create Key Vault Secret (SQL Admin Password)
 resource "azurerm_key_vault_secret" "admin_password" {
   depends_on   = [azurerm_key_vault.keyvault]
