@@ -132,6 +132,14 @@ resource "azurerm_key_vault_secret" "testvalueone" {
   key_vault_id = azurerm_key_vault.keyvault.id
 }
 
+// Create Key Vault Secret (test value)
+resource "azurerm_key_vault_secret" "testvaluethree" {
+  depends_on   = [azurerm_key_vault.keyvault]
+  name         = "testvaluethree"
+  value        = "testvaluethree"
+  key_vault_id = azurerm_key_vault.keyvault.id
+}
+
 // Create Key Vault Secret (test value two)
 resource "azurerm_key_vault_secret" "testvaluetwo" {
   depends_on   = [azurerm_key_vault.keyvault]
