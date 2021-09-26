@@ -123,7 +123,7 @@ jobs:
       shell: bash
       run: |
         # Set DataBricks AAD token env
-        export DATABRICKS_AAD_TOKEN=$(curl -X GET -d "grant_type=client_credentials&client_id=${{ env.ARM_CLIENT_ID }}&resource=2ff814a6-3304-4ab8-85cb-cd0e6f879c1d&client_secret=${{ env.ARM_CLIENT_SECRET }}" https://login.microsoftonline.us/${{ env.ARM_TENANT_ID }}/oauth2/token | jq -r ".access_token")
+        export DATABRICKS_AAD_TOKEN=$(curl -X GET -d "grant_type=client_credentials&client_id=${{ env.ARM_CLIENT_ID }}&resource=2ff814a6-3304-4ab8-85cb-cd0e6f879c1d&client_secret=${{ env.ARM_CLIENT_SECRET }}" https://login.microsoftonline.com/${{ env.ARM_TENANT_ID }}/oauth2/token | jq -r ".access_token")
 
         # Log into Databricks with SPN
         databricks_workspace_url="https://${{ steps.get_databricks_url.outputs.DATABRICKS_URL }}/?o=${{ steps.get_databricks_url.outputs.DATABRICKS_ID }}"
