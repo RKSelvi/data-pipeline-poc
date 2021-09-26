@@ -1,19 +1,26 @@
 terraform {
   required_providers {
-    azurerm = "~> 2.46.1"
+    azurerm = "~> 2.78.0"
+    azuread = "~> 1.6.0"
+    databricks = {
+      source = "databrickslabs/databricks"
+      version = "0.3.7"
+    }
   }
 
   backend "azurerm" {
     resource_group_name  = "tf_backend_rg"
     storage_account_name = "tfbkndsapoc"
     container_name       = "tfstcont"
-    key                  = "data-pipe.tfstate" # ci pipeline state file
-    # key                  = "data-pipe-prod.tfstate" # cd pipeline state file
+    key                  = "data-pipe.tfstate"
   }
 }
 
 provider "azurerm" {
   features {}
+}
+
+provider "azuread" {
 }
 
 data "azurerm_client_config" "current" {
@@ -23,6 +30,42 @@ data "azurerm_client_config" "current" {
 resource "azurerm_resource_group" "rgroup" {
   name     = var.resource_group_name
   location = var.location
+}
+
+// Create Databricks
+resource "azurerm_databricks_workspace" "databricks" {
+  name                          = "datapipeline-databricks"
+  location                      = azurerm_resource_group.rgroup.location
+  resource_group_name           = azurerm_resource_group.rgroup.name
+  sku                           = "premium"
+}
+
+// Databricks Provider
+provider "databricks" {
+  azure_workspace_resource_id = azurerm_databricks_workspace.databricks.id
+  azure_client_id             = var.client_id
+  azure_client_secret         = var.client_secret
+  azure_tenant_id             = var.tenant_id
+}
+
+resource "databricks_cluster" "databricks_cluster" {
+  depends_on              = [azurerm_databricks_workspace.databricks]
+  cluster_name            = "databricks-cluterone"
+  spark_version           = "8.2.x-scala2.12"
+  node_type_id            = "Standard_DS3_v2"
+  driver_node_type_id     = "Standard_DS14_v2"
+  autotermination_minutes = 15
+  num_workers             = 5
+  spark_env_vars          = {
+    "PYSPARK_PYTHON" : "/databricks/python3/bin/python3"
+  }
+  spark_conf = {
+    "spark.databricks.cluster.profile" : "serverless",
+    "spark.databricks.repl.allowedLanguages": "sql,python,r"
+  }
+  custom_tags = {
+    "ResourceClass" = "Serverless"
+  }
 }
 
 // Create Log Analytics Workspace

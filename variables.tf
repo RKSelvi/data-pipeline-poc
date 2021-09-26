@@ -95,3 +95,13 @@ variable "synapse_db_name" {
   type        = string
   description = "Synapse DB Name"
 }
+
+variable "client_id" {
+  type        = string
+  description = "Client ID"
+}
+
+variable "client_secret" {
+  type        = string
+  description = "Client Secret"
+}
