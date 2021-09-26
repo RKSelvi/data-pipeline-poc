@@ -90,7 +90,7 @@ jobs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ env.AZURE_CREDENTIALS }}
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
    
     - name: Get Key Vault Secrets
       id: get_kv_secrets
@@ -130,14 +130,14 @@ jobs:
         databricks configure --aad-token --host $databricks_workspace_url
 
         # Check if workspace notebook already exists
-        export DB_WKSP=$(databricks workspace ls /${{ env.databricks_notebook_name }})
+        export DB_WKSP=$(databricks workspace ls /${{ env.TF_VAR_databricks_notebook_name }})
         if [[ "$DB_WKSP" != *"RESOURCE_DOES_NOT_EXIST"* ]];
         then
-          databricks workspace delete /${{ env.databricks_notebook_name }} -r
+          databricks workspace delete /${{ env.TF_VAR_databricks_notebook_name }} -r
         fi
 
         # Import DBC archive to Databricks Workspace
-        databricks workspace import Databricks/${{ env.databricks_dbc_name }} /${{ env.databricks_notebook_name }} -f DBC -l PYTHON
+        databricks workspace import Databricks/${{ env.databricks_dbc_name }} /${{ env.TF_VAR_databricks_notebook_name }} -f DBC -l PYTHON
 
         # Removed Databricks Secret Scope if exists & Re-Create
         export KEYVAULT_SCOPE=$(databricks secrets list-scopes)
