@@ -173,7 +173,7 @@ jobs:
        
         ### Set ENVIRONMENT JOB
         echo Set Environment Job
-        export jobid=$(databricks jobs create --json '{"name": "Common Job - Set Environment", "existing_cluster_id": "'$clusterid'", "libraries": [], "timeout_seconds": 0, "max_retries": -1, "notebook_task": { "notebook_path": "/CDE_ELT/Post_Deployment/Post_Deployment_Create_Environment" } }' | jq -r '.job_id')
+        export jobid=$(databricks jobs create --json '{"name": "Common Job - Set Environment", "existing_cluster_id": "'$clusterid'", "libraries": [], "timeout_seconds": 0, "max_retries": -1, "notebook_task": { "notebook_path": "/databricks-notebook" } }' | jq -r '.job_id')
         export runid=$(databricks jobs run-now --job-id $jobid | jq -r '.run_id')
         echo runid is $runid
         export status=$(databricks runs get --run-id $runid | jq -r '.state' | jq -r '.life_cycle_state')
