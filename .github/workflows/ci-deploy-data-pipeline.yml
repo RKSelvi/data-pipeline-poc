@@ -16,8 +16,8 @@ env:
   TF_VAR_data_lake_name: dataautopipelinedl
   TF_VAR_data_lake_file_system_name: dataautopipelinefs
   TF_VAR_data_lake_account_tier: standard
-  TF_VAR_data_lake_account_replication_type: StorageV2
-  TF_VAR_data_lake_account_kind: GRS
+  TF_VAR_data_lake_account_replication_type: GRS
+  TF_VAR_data_lake_account_kind: StorageV2
   TF_VAR_data_lake_allow_blob_public_access: false
   TF_VAR_keyvault_name: dataautopipelinekv
   TF_VAR_keyvault_sku: standard
