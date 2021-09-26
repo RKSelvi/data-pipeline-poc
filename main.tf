@@ -51,7 +51,7 @@ provider "databricks" {
 resource "databricks_cluster" "databricks_cluster" {
   depends_on              = [azurerm_databricks_workspace.databricks]
   cluster_name            = "databricks-cluterone"
-  spark_version           = "8.3-scala2.12"
+  spark_version           = "8.2.x-scala2.12"
   node_type_id            = "Standard_DS3_v2"
   driver_node_type_id     = "Standard_DS3_v2"
   autotermination_minutes = 15
