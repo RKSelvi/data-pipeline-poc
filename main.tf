@@ -34,7 +34,7 @@ resource "azurerm_resource_group" "rgroup" {
 
 // Create Databricks
 resource "azurerm_databricks_workspace" "databricks" {
-  name                          = "datapipeline-databricks"
+  name                          = var.databricks_name
   location                      = azurerm_resource_group.rgroup.location
   resource_group_name           = azurerm_resource_group.rgroup.name
   sku                           = "premium"
@@ -50,7 +50,7 @@ provider "databricks" {
 
 resource "databricks_cluster" "databricks_cluster" {
   depends_on              = [azurerm_databricks_workspace.databricks]
-  cluster_name            = "databricks-cluterone"
+  cluster_name            = var.databricks_cluster_name
   spark_version           = "8.2.x-scala2.12"
   node_type_id            = "Standard_DS3_v2"
   driver_node_type_id     = "Standard_DS3_v2"

@@ -105,3 +105,13 @@ variable "client_secret" {
   type        = string
   description = "Client Secret"
 }
+
+variable "databricks_name" {
+  type        = string
+  description = "Databricks Name"
+}
+
+variable "databricks_cluster_name" {
+  type        = string
+  description = "Databricks Cluster Name"
+}

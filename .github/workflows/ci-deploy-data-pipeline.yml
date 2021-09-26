@@ -2,6 +2,38 @@ name: data-pipeline-poc
 
 env:
   # Env variables for 'Sandbox'
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_ACCESS_KEY: ${{ secrets.TFSTATE_STORAGE_ACCT_KEY }}        
+  TF_VAR_location: ${{ env.LOCATION }}
+  TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+  TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+  TF_VAR_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+  TF_VAR_resource_group_name: ${{ env.resource_group_name }}
+  TF_VAR_log_analytics_workspace_name: ${{ env.log_analytics_workspace_name }}
+  TF_VAR_data_lake_name: ${{ env.data_lake_name }}
+  TF_VAR_data_lake_file_system_name: ${{ env.data_lake_file_system_name }}
+  TF_VAR_data_lake_account_tier: ${{ env.data_lake_account_tier }}
+  TF_VAR_data_lake_account_replication_type: ${{ env.data_lake_account_replication_type }}
+  TF_VAR_data_lake_account_kind: ${{ env.data_lake_account_kind }}
+  TF_VAR_data_lake_allow_blob_public_access: ${{ env.data_lake_allow_blob_public_access }}
+  TF_VAR_keyvault_name: ${{ env.keyvault_name }}
+  TF_VAR_keyvault_sku: ${{ env.keyvault_sku }}
+  TF_VAR_synapse_server_name: ${{ env.synapse_server_name }}
+  TF_VAR_synapse_db_name: ${{ env.synapse_db_name }}      
+  TF_VAR_secret_name_admin_user: ${{ env.secret_name_admin_user }}
+  TF_VAR_secret_value_admin_user: ${{ secrets.SQL_ADMIN_USER_NAME }}
+  TF_VAR_secret_name_admin_password: ${{ env.secret_name_admin_password }}
+  TF_VAR_secret_value_admin_password: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}      
+  TF_VAR_key_vault_diagnostic_monitoring_name: ${{ env.key_vault_diagnostic_monitoring_name }}
+  TF_VAR_data_lake_diagnostic_monitoring_name: ${{ env.data_lake_diagnostic_monitoring_name }}
+  TF_VAR_databricks_name: datapipeline-databricks
+  TF_VAR_databricks_notebook_name: databricks-notebook
+  TF_VAR_databricks_cluster_name: databricks-cluterone
+  databricks_dbc_name: databricks-notebook.dbc
+  databricks_secret_scope_name: keyvault_secret_scope
   LOCATION: eastus2
   resource_group_name: data-pipeline-rg
   log_analytics_workspace_name: data-auto-pipeline-log
@@ -47,86 +79,185 @@ jobs:
         terraform init
         terraform plan -no-color
         terraform apply -auto-approve
-      env:
-        ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-        ARM_ACCESS_KEY: ${{ secrets.TFSTATE_STORAGE_ACCT_KEY }}        
-        TF_VAR_location: ${{ env.LOCATION }}
-        TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-        TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
-        TF_VAR_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-        TF_VAR_resource_group_name: ${{ env.resource_group_name }}
-        TF_VAR_log_analytics_workspace_name: ${{ env.log_analytics_workspace_name }}
-        TF_VAR_data_lake_name: ${{ env.data_lake_name }}
-        TF_VAR_data_lake_file_system_name: ${{ env.data_lake_file_system_name }}
-        TF_VAR_data_lake_account_tier: ${{ env.data_lake_account_tier }}
-        TF_VAR_data_lake_account_replication_type: ${{ env.data_lake_account_replication_type }}
-        TF_VAR_data_lake_account_kind: ${{ env.data_lake_account_kind }}
-        TF_VAR_data_lake_allow_blob_public_access: ${{ env.data_lake_allow_blob_public_access }}
-        TF_VAR_keyvault_name: ${{ env.keyvault_name }}
-        TF_VAR_keyvault_sku: ${{ env.keyvault_sku }}
-        TF_VAR_synapse_server_name: ${{ env.synapse_server_name }}
-        TF_VAR_synapse_db_name: ${{ env.synapse_db_name }}      
-        TF_VAR_secret_name_admin_user: ${{ env.secret_name_admin_user }}
-        TF_VAR_secret_value_admin_user: ${{ secrets.SQL_ADMIN_USER_NAME }}
-        TF_VAR_secret_name_admin_password: ${{ env.secret_name_admin_password }}
-        TF_VAR_secret_value_admin_password: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}      
-        TF_VAR_key_vault_diagnostic_monitoring_name: ${{ env.key_vault_diagnostic_monitoring_name }}
-        TF_VAR_data_lake_diagnostic_monitoring_name: ${{ env.data_lake_diagnostic_monitoring_name }}
   
-  deploydacpac:
-    name: 'DacpacDeployment'
+  deploydatabricksartifactsandadf:
     needs: [terraform]
-    runs-on: windows-latest
+    name: 'Databricks Artifacts Deployment'
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2.3.4
+   
+    - name: Set up Python 3.0
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.0
 
-    - name: Deploy DACPAC
-      id: gh_ws
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+
+    - name: Download Databricks CLI
+      id: databricks_cli
       shell: pwsh
       run: |
-        cd ${{ github.workspace }}
-        $env:Path = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin"
-        MSBuild.exe 'DataPipelinePoc/DataPipelinePoc.sqlproj' /p:OutputPath=$env:DACPAC_Publish_Path      
-      env:
-        DACPAC_Publish_Path: ${{ env.dacpac_publish_path }}
+        pip install databricks-cli
+        pip install databricks-cli --upgrade
 
-    - name: Connect to Azure
+    - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Get Storage Access Key
-      id: get_access_key
-      shell: pwsh
-      env:
-        DATA_LAKE_RG_NAME: ${{ env.resource_group_name }}
-        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+        creds: ${{ env.AZURE_CREDENTIALS }}
+   
+    - name: Get Key Vault Secrets
+      id: get_kv_secrets
+      shell: pwsh        
       run: |
-        $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.keyvault_name }} --query value --output tsv)
-        echo "::add-mask::$dataLakeStorageAccountKey"
-        echo "::set-output name=STORAGE_ACCESS_KEY::$dataLakeStorageAccountKey"
+        $sqlAdminUserName = $(az keyvault secret show --name ${{ env.secret_name_admin_user }} --vault-name ${{ env.keyvault_name }} --query value --output tsv)
+        echo "::add-mask::$sqlAdminUserName"
+        echo "::set-output name=SQL_ADMIN_USER_NAME::$sqlAdminUserName"
 
-    - uses: azure/sql-action@v1
-      with:
-        server-name: "${{ env.DB_Server_Name }}.sql.azuresynapse.net"
-        connection-string: "Server=tcp:${{ env.DB_Server_Name }}.sql.azuresynapse.net,1433;Initial Catalog=${{ env.DB_Name }};Persist Security Info=False;User ID=${{ env.SQL_ADMIN_USER_NAME }};Password=${{ env.SQL_ADMIN_USER_PSWD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-        dacpac-package: ${{ env.DACPAC_Path }}
-        arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://data-files@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
-      env:
-        DB_Server_Name: ${{ env.synapse_server_name }}
-        DB_Name: ${{ env.synapse_db_name }}
-        DACPAC_Path: ${{ env.dacpac_path }}
-        SQL_ADMIN_USER_NAME: ${{ secrets.SQL_ADMIN_USER_NAME }}
-        SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}
-        DATA_LAKE_ACCESS_KEY: ${{ steps.get_access_key.outputs.STORAGE_ACCESS_KEY }}
-        DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
-        DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
-        DATA_LAKE_NAME: ${{ env.data_lake_name }}
-        
+        $sqlAdminUserPswd = $(az keyvault secret show --name ${{ env.secret_name_admin_password }} --vault-name ${{ env.keyvault_name }} --query value --output tsv)
+        echo "::add-mask::$sqlAdminUserPswd"
+        echo "::set-output name=SQL_ADMIN_USER_PASSWORD::$sqlAdminUserPswd"
+
+    - name: Get Databricks Workspace URL
+      id: get_databricks_url
+      shell: pwsh
+      run: |
+        az config set extension.use_dynamic_install=yes_without_prompt
+        $db_wksp_url = $(az databricks workspace show --resource-group ${{ env.resource_group_name }} --name ${{ env.databricks_name }} --query workspaceUrl --output tsv)
+        $db_wksp_id = $(az databricks workspace show --resource-group ${{ env.resource_group_name }} --name ${{ env.databricks_name }} --query workspaceId --output tsv)
+
+        echo "::add-mask::$db_wksp_url"
+        echo "::set-output name=DATABRICKS_URL::$db_wksp_url"
+
+        echo "::add-mask::$db_wksp_id"
+        echo "::set-output name=DATABRICKS_ID::$db_wksp_id"
+
+    - name: Databricks management
+      id: api_call_databricks_manage
+      shell: bash
+      run: |
+        # Set DataBricks AAD token env
+        export DATABRICKS_AAD_TOKEN=$(curl -X GET -d "grant_type=client_credentials&client_id=${{ env.ARM_CLIENT_ID }}&resource=2ff814a6-3304-4ab8-85cb-cd0e6f879c1d&client_secret=${{ env.ARM_CLIENT_SECRET }}" https://login.microsoftonline.us/${{ env.ARM_TENANT_ID }}/oauth2/token | jq -r ".access_token")
+
+        # Log into Databricks with SPN
+        databricks_workspace_url="https://${{ steps.get_databricks_url.outputs.DATABRICKS_URL }}/?o=${{ steps.get_databricks_url.outputs.DATABRICKS_ID }}"
+        databricks configure --aad-token --host $databricks_workspace_url
+
+        # Check if workspace notebook already exists
+        export DB_WKSP=$(databricks workspace ls /${{ env.databricks_notebook_name }})
+        if [[ "$DB_WKSP" != *"RESOURCE_DOES_NOT_EXIST"* ]];
+        then
+          databricks workspace delete /${{ env.databricks_notebook_name }} -r
+        fi
+
+        # Import DBC archive to Databricks Workspace
+        databricks workspace import Databricks/${{ env.databricks_dbc_name }} /${{ env.databricks_notebook_name }} -f DBC -l PYTHON
+
+        # Removed Databricks Secret Scope if exists & Re-Create
+        export KEYVAULT_SCOPE=$(databricks secrets list-scopes)
+        if [[ "$KEYVAULT_SCOPE" == *"${{ env.databricks_secret_scope_name }}"* ]];
+        then
+          databricks secrets delete-scope --scope ${{ env.databricks_secret_scope_name }}
+        fi        
+       
+        # Create Databricks Secret Scope
+        databricks secrets create-scope --scope ${{ env.databricks_secret_scope_name }}
+
+        # Create Secrets in Databricks Secret Scope
+        databricks secrets put --scope ${{ env.databricks_secret_scope_name }} --key sql-db-admin-user-name --string-value "${{ steps.get_kv_secrets.outputs.SQL_ADMIN_USER_NAME }}"
+        databricks secrets put --scope ${{ env.databricks_secret_scope_name }} --key sql-db-admin-user-password --string-value "${{ steps.get_kv_secrets.outputs.SQL_ADMIN_USER_PASSWORD }}"
+       
+    - name: Run Notebook
+      id: run_notebook
+      shell: bash
+      run: |      
+        #Check if job exists
+        export DB_JOBS=$(databricks jobs list --output json | jq '.jobs[]' )
+        echo $DB_JOBS
+       
+        #Delete if job exists
+        if [[ "$DB_JOBS" = *"Common Job"* ]];
+        then
+          echo 'deleting existing jobs now'
+          databricks jobs list --output json | jq '.jobs[] | select(.settings.name | contains("Common Job")) | .job_id' | xargs -n 1 databricks jobs delete --job-id
+        fi
+
+        #Get Cluster ID
+        export clusterid=$(databricks clusters get --cluster-name ${{ env.databricks_cluster_name }} | jq -r '.cluster_id')
+       
+        ### Set ENVIRONMENT JOB
+        echo Set Environment Job
+        export jobid=$(databricks jobs create --json '{"name": "Common Job - Set Environment", "existing_cluster_id": "'$clusterid'", "libraries": [], "timeout_seconds": 0, "max_retries": -1, "notebook_task": { "notebook_path": "/CDE_ELT/Post_Deployment/Post_Deployment_Create_Environment" } }' | jq -r '.job_id')
+        export runid=$(databricks jobs run-now --job-id $jobid | jq -r '.run_id')
+        echo runid is $runid
+        export status=$(databricks runs get --run-id $runid | jq -r '.state' | jq -r '.life_cycle_state')
+        echo status is $status
+        while [[ "$status" = "PENDING" || "$status" = "RUNNING" ]]
+        do
+            echo checking job status...  
+            sleep 1m
+            export status=$(databricks runs get --run-id $runid | jq -r '.state' | jq -r '.life_cycle_state')
+            echo status is $status
+        done            
+
     - name: logout
       run: |
         az logout
+
+  # deploydacpac:
+  #   name: 'DacpacDeployment'
+  #   needs: [terraform]
+  #   runs-on: windows-latest
+
+  #   steps:
+  #   - uses: actions/checkout@v2.3.4
+
+  #   - name: Deploy DACPAC
+  #     id: gh_ws
+  #     shell: pwsh
+  #     run: |
+  #       cd ${{ github.workspace }}
+  #       $env:Path = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin"
+  #       MSBuild.exe 'DataPipelinePoc/DataPipelinePoc.sqlproj' /p:OutputPath=$env:DACPAC_Publish_Path      
+  #     env:
+  #       DACPAC_Publish_Path: ${{ env.dacpac_publish_path }}
+
+  #   - name: Connect to Azure
+  #     uses: azure/login@v1
+  #     with:
+  #       creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+  #   - name: Get Storage Access Key
+  #     id: get_access_key
+  #     shell: pwsh
+  #     env:
+  #       DATA_LAKE_RG_NAME: ${{ env.resource_group_name }}
+  #       DATA_LAKE_NAME: ${{ env.data_lake_name }}
+  #     run: |
+  #       $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.keyvault_name }} --query value --output tsv)
+  #       echo "::add-mask::$dataLakeStorageAccountKey"
+  #       echo "::set-output name=STORAGE_ACCESS_KEY::$dataLakeStorageAccountKey"
+
+  #   - uses: azure/sql-action@v1
+  #     with:
+  #       server-name: "${{ env.DB_Server_Name }}.sql.azuresynapse.net"
+  #       connection-string: "Server=tcp:${{ env.DB_Server_Name }}.sql.azuresynapse.net,1433;Initial Catalog=${{ env.DB_Name }};Persist Security Info=False;User ID=${{ env.SQL_ADMIN_USER_NAME }};Password=${{ env.SQL_ADMIN_USER_PSWD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+  #       dacpac-package: ${{ env.DACPAC_Path }}
+  #       arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://data-files@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
+  #     env:
+  #       DB_Server_Name: ${{ env.synapse_server_name }}
+  #       DB_Name: ${{ env.synapse_db_name }}
+  #       DACPAC_Path: ${{ env.dacpac_path }}
+  #       SQL_ADMIN_USER_NAME: ${{ secrets.SQL_ADMIN_USER_NAME }}
+  #       SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}
+  #       DATA_LAKE_ACCESS_KEY: ${{ steps.get_access_key.outputs.STORAGE_ACCESS_KEY }}
+  #       DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
+  #       DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
+  #       DATA_LAKE_NAME: ${{ env.data_lake_name }}
+        
+  #   - name: logout
+  #     run: |
+  #       az logout
