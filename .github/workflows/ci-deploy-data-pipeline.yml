@@ -32,7 +32,7 @@ env:
   TF_VAR_databricks_name: datapipeline-databricks
   TF_VAR_databricks_notebook_name: databricks-notebook
   TF_VAR_databricks_cluster_name: databricks-cluterone
-  databricks_dbc_name: databricks-notebook.dbc
+  databricks_dbc_name: Demo_Notebook.dbc
   databricks_secret_scope_name: keyvault_secret_scope
   dacpac_path: ./DataPipelinePoc/Publish/DataPipelinePoc.dacpac
   dacpac_publish_path: .\publish
@@ -169,7 +169,7 @@ jobs:
         fi
 
         #Get Cluster ID
-        export clusterid=$(databricks clusters get --cluster-name ${{ env.databricks_cluster_name }} | jq -r '.cluster_id')
+        export clusterid=$(databricks clusters get --cluster-name ${{ env.TF_VAR_databricks_cluster_name }} | jq -r '.cluster_id')
        
         ### Set ENVIRONMENT JOB
         echo Set Environment Job
