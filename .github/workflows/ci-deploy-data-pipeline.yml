@@ -63,7 +63,7 @@ jobs:
         terraform plan -no-color
         terraform apply -auto-approve
   
-  deploydatabricksartifactsandadf:
+  deploydatabricksartifacts:
     needs: [terraform]
     name: 'Databricks Artifacts Deployment'
     runs-on: ubuntu-latest
