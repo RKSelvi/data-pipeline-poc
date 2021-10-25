@@ -63,8 +63,63 @@ jobs:
         terraform plan -no-color
         terraform apply -auto-approve
   
-  deploydatabricksartifacts:
+  deploydacpac:
+    name: 'DacpacDeployment'
     needs: [terraform]
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Deploy DACPAC
+      id: gh_ws
+      shell: pwsh
+      run: |
+        cd ${{ github.workspace }}
+        $env:Path = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin"
+        MSBuild.exe 'DataPipelinePoc/DataPipelinePoc.sqlproj' /p:OutputPath=$env:DACPAC_Publish_Path      
+      env:
+        DACPAC_Publish_Path: ${{ env.dacpac_publish_path }}
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get Storage Access Key
+      id: get_access_key
+      shell: pwsh
+      env:
+        DATA_LAKE_RG_NAME: ${{ env.resource_group_name }}
+        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+      run: |
+        $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.keyvault_name }} --query value --output tsv)
+        echo "::add-mask::$dataLakeStorageAccountKey"
+        echo "::set-output name=STORAGE_ACCESS_KEY::$dataLakeStorageAccountKey"
+
+    - uses: azure/sql-action@v1
+      with:
+        server-name: "${{ env.DB_Server_Name }}.sql.azuresynapse.net"
+        connection-string: "Server=tcp:${{ env.DB_Server_Name }}.sql.azuresynapse.net,1433;Initial Catalog=${{ env.DB_Name }};Persist Security Info=False;User ID=${{ env.SQL_ADMIN_USER_NAME }};Password=${{ env.SQL_ADMIN_USER_PSWD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        dacpac-package: ${{ env.DACPAC_Path }}
+        arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://data-files@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
+      env:
+        DB_Server_Name: ${{ env.synapse_server_name }}
+        DB_Name: ${{ env.synapse_db_name }}
+        DACPAC_Path: ${{ env.dacpac_path }}
+        SQL_ADMIN_USER_NAME: ${{ secrets.SQL_ADMIN_USER_NAME }}
+        SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}
+        DATA_LAKE_ACCESS_KEY: ${{ steps.get_access_key.outputs.STORAGE_ACCESS_KEY }}
+        DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
+        DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
+        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+        
+    - name: logout
+      run: |
+        az logout
+  
+  deploydatabricksartifacts:
+    needs: [terraform,deploydacpac]
     name: 'Databricks Artifacts Deployment'
     runs-on: ubuntu-latest
 
@@ -186,61 +241,6 @@ jobs:
             echo status is $status
         done            
 
-    - name: logout
-      run: |
-        az logout
-
-  deploydacpac:
-    name: 'DacpacDeployment'
-    needs: [terraform]
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v2.3.4
-
-    - name: Deploy DACPAC
-      id: gh_ws
-      shell: pwsh
-      run: |
-        cd ${{ github.workspace }}
-        $env:Path = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin"
-        MSBuild.exe 'DataPipelinePoc/DataPipelinePoc.sqlproj' /p:OutputPath=$env:DACPAC_Publish_Path      
-      env:
-        DACPAC_Publish_Path: ${{ env.dacpac_publish_path }}
-
-    - name: Connect to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Get Storage Access Key
-      id: get_access_key
-      shell: pwsh
-      env:
-        DATA_LAKE_RG_NAME: ${{ env.resource_group_name }}
-        DATA_LAKE_NAME: ${{ env.data_lake_name }}
-      run: |
-        $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.keyvault_name }} --query value --output tsv)
-        echo "::add-mask::$dataLakeStorageAccountKey"
-        echo "::set-output name=STORAGE_ACCESS_KEY::$dataLakeStorageAccountKey"
-
-    - uses: azure/sql-action@v1
-      with:
-        server-name: "${{ env.DB_Server_Name }}.sql.azuresynapse.net"
-        connection-string: "Server=tcp:${{ env.DB_Server_Name }}.sql.azuresynapse.net,1433;Initial Catalog=${{ env.DB_Name }};Persist Security Info=False;User ID=${{ env.SQL_ADMIN_USER_NAME }};Password=${{ env.SQL_ADMIN_USER_PSWD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-        dacpac-package: ${{ env.DACPAC_Path }}
-        arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://data-files@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
-      env:
-        DB_Server_Name: ${{ env.synapse_server_name }}
-        DB_Name: ${{ env.synapse_db_name }}
-        DACPAC_Path: ${{ env.dacpac_path }}
-        SQL_ADMIN_USER_NAME: ${{ secrets.SQL_ADMIN_USER_NAME }}
-        SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}
-        DATA_LAKE_ACCESS_KEY: ${{ steps.get_access_key.outputs.STORAGE_ACCESS_KEY }}
-        DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
-        DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
-        DATA_LAKE_NAME: ${{ env.data_lake_name }}
-        
     - name: logout
       run: |
         az logout
