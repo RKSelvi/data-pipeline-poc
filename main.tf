@@ -1,19 +1,26 @@
 terraform {
   required_providers {
-    azurerm = "~> 2.46.1"
+    azurerm = "~> 2.78.0"
+    azuread = "~> 1.6.0"
+    databricks = {
+      source = "databrickslabs/databricks"
+      version = "0.3.7"
+    }
   }
 
   backend "azurerm" {
     resource_group_name  = "tf_backend_rg"
     storage_account_name = "tfbkndsapoc"
     container_name       = "tfstcont"
-    # key                  = "data-pipe.tfstate" # ci pipeline state file
-    key                  = "data-pipe-prod.tfstate" # cd pipeline state file
+    key                  = "data-pipe.tfstate"
   }
 }
 
 provider "azurerm" {
   features {}
+}
+
+provider "azuread" {
 }
 
 data "azurerm_client_config" "current" {
@@ -23,6 +30,42 @@ data "azurerm_client_config" "current" {
 resource "azurerm_resource_group" "rgroup" {
   name     = var.resource_group_name
   location = var.location
+}
+
+// Create Databricks
+resource "azurerm_databricks_workspace" "databricks" {
+  name                          = var.databricks_name
+  location                      = azurerm_resource_group.rgroup.location
+  resource_group_name           = azurerm_resource_group.rgroup.name
+  sku                           = "premium"
+}
+
+// Databricks Provider
+provider "databricks" {
+  azure_workspace_resource_id = azurerm_databricks_workspace.databricks.id
+  azure_client_id             = var.client_id
+  azure_client_secret         = var.client_secret
+  azure_tenant_id             = var.tenant_id
+}
+
+resource "databricks_cluster" "databricks_cluster" {
+  depends_on              = [azurerm_databricks_workspace.databricks]
+  cluster_name            = var.databricks_cluster_name
+  spark_version           = "8.2.x-scala2.12"
+  node_type_id            = "Standard_DS3_v2"
+  driver_node_type_id     = "Standard_DS3_v2"
+  autotermination_minutes = 15
+  num_workers             = 5
+  spark_env_vars          = {
+    "PYSPARK_PYTHON" : "/databricks/python3/bin/python3"
+  }
+  spark_conf = {
+    "spark.databricks.cluster.profile" : "serverless",
+    "spark.databricks.repl.allowedLanguages": "sql,python,r"
+  }
+  custom_tags = {
+    "ResourceClass" = "Serverless"
+  }
 }
 
 // Create Log Analytics Workspace
@@ -124,6 +167,30 @@ resource "azurerm_key_vault_secret" "admin_username" {
   key_vault_id = azurerm_key_vault.keyvault.id
 }
 
+// Create Key Vault Secret (test value)
+resource "azurerm_key_vault_secret" "testvalueone" {
+  depends_on   = [azurerm_key_vault.keyvault]
+  name         = "testvalueone"
+  value        = "testvalueone"
+  key_vault_id = azurerm_key_vault.keyvault.id
+}
+
+// Create Key Vault Secret (test value)
+resource "azurerm_key_vault_secret" "testvaluethree" {
+  depends_on   = [azurerm_key_vault.keyvault]
+  name         = "testvaluethree"
+  value        = "testvaluethree"
+  key_vault_id = azurerm_key_vault.keyvault.id
+}
+
+// Create Key Vault Secret (test value two)
+resource "azurerm_key_vault_secret" "testvaluetwo" {
+  depends_on   = [azurerm_key_vault.keyvault]
+  name         = "testvaluetwo"
+  value        = "testvaluetwo"
+  key_vault_id = azurerm_key_vault.keyvault.id
+}
+
 // Create Key Vault Secret (SQL Admin Password)
 resource "azurerm_key_vault_secret" "admin_password" {
   depends_on   = [azurerm_key_vault.keyvault]
@@ -163,6 +230,13 @@ resource "azurerm_synapse_firewall_rule" "example" {
   synapse_workspace_id = azurerm_synapse_workspace.pocsynapsewksp.id
   start_ip_address     = "0.0.0.0"
   end_ip_address       = "0.0.0.0"
+}
+
+// CreateData Factory
+resource "azurerm_data_factory" "datafactory" {
+  name                = "adf-from-tf-code"
+  location            = azurerm_resource_group.rgroup.location
+  resource_group_name = azurerm_resource_group.rgroup.name
 }
 
 // Create Diagnostic Monitoring - Data Lake
