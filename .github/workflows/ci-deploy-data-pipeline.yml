@@ -93,7 +93,7 @@ jobs:
         DATA_LAKE_RG_NAME: ${{ env.resource_group_name }}
         DATA_LAKE_NAME: ${{ env.data_lake_name }}
       run: |
-        $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.keyvault_name }} --query value --output tsv)
+        $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.TF_VAR_keyvault_name }} --query value --output tsv)
         echo "::add-mask::$dataLakeStorageAccountKey"
         echo "::set-output name=STORAGE_ACCESS_KEY::$dataLakeStorageAccountKey"
 
