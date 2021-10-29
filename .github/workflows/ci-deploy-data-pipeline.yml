@@ -91,7 +91,7 @@ jobs:
       shell: pwsh
       env:
         DATA_LAKE_RG_NAME: ${{ env.resource_group_name }}
-        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+        DATA_LAKE_NAME: ${{ env.TF_VAR_data_lake_name }}
       run: |
         $dataLakeStorageAccountKey = $(az keyvault secret show --name "data-lake-access-key" --vault-name ${{ env.TF_VAR_keyvault_name }} --query value --output tsv)
         echo "::add-mask::$dataLakeStorageAccountKey"
@@ -104,15 +104,15 @@ jobs:
         dacpac-package: ${{ env.DACPAC_Path }}
         arguments: "/Variables:DataLakeAccessKey=\"${{ env.DATA_LAKE_ACCESS_KEY }}\" /Variables:DataLakeAccessId=\"${{ env.DATA_LAKE_ACCESS_ID }}\" /Variables:DataLakeEncryptionMasterKey=\"${{ env.DATA_LAKE_ENCRYPTION_MASTER_KEY }}\" /Variables:ParquetLogFileLocation=\"wasbs://data-files@${{ env.DATA_LAKE_NAME }}.blob.core.windows.net/\""
       env:
-        DB_Server_Name: ${{ env.synapse_server_name }}
-        DB_Name: ${{ env.synapse_db_name }}
+        DB_Server_Name: ${{ env.TF_VAR_synapse_server_name }}
+        DB_Name: ${{ env.TF_VAR_synapse_db_name }}
         DACPAC_Path: ${{ env.dacpac_path }}
         SQL_ADMIN_USER_NAME: ${{ secrets.SQL_ADMIN_USER_NAME }}
         SQL_ADMIN_USER_PSWD: ${{ secrets.SQL_ADMIN_USER_PASSWORD }}
         DATA_LAKE_ACCESS_KEY: ${{ steps.get_access_key.outputs.STORAGE_ACCESS_KEY }}
         DATA_LAKE_ACCESS_ID: ${{ secrets.DATA_LAKE_MASTER_ID }}
         DATA_LAKE_ENCRYPTION_MASTER_KEY: ${{ secrets.DATA_LAKE_ENCRYPTION_MASTER_KEY }}
-        DATA_LAKE_NAME: ${{ env.data_lake_name }}
+        DATA_LAKE_NAME: ${{ env.TF_VAR_data_lake_name }}
         
     - name: logout
       run: |
